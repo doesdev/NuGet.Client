@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -87,7 +87,7 @@ namespace NuGet.Test.Utility
         private void DumpMessage(string level, string data)
         {
             // NOTE(anurse): Uncomment this to help when debugging tests
-            //Console.WriteLine($"{level}: {data}");
+            Console.WriteLine($"{level}: {data}");
             _output?.WriteLine($"{level}: {data}");
         }
 

@@ -16,6 +16,7 @@ using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.ProjectModel;
 using NuGet.Repositories;
+using NuGet.Shared;
 using NuGet.Versioning;
 
 namespace NuGet.Commands
@@ -141,6 +142,7 @@ namespace NuGet.Commands
                         if (lockFileLib == null)
                         {
                             lockFileLib = CreateLockFileLibrary(package, sha512, path);
+                            lockFileLib.Files.ForEach(file => _logger.LogInformation(file));
                         }
 
                         // Create a new lock file library
@@ -228,6 +230,8 @@ namespace NuGet.Commands
                             cache: builderCache);
 
                         target.Libraries.Add(targetLibrary);
+
+                        targetLibrary.Build.ForEach(lib => _logger.LogInformation(lib.Path));
 
                         // Log warnings if the target library used the fallback framework
                         if (warnForImportsOnGraph && !librariesWithWarnings.Contains(library))
