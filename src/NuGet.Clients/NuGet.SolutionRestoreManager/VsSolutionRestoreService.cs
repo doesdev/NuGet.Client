@@ -149,7 +149,11 @@ namespace NuGet.SolutionRestoreManager
 
             if (projectRestoreInfo != null && projectRestoreInfo.ToolReferences != null)
             {
-                VSNominationUtilities.ProcessToolReferences(projectNames, projectRestoreInfo, dgSpec);
+                VSNominationUtilities.ProcessToolReferences(projectNames, projectRestoreInfo.TargetFrameworks, projectRestoreInfo.ToolReferences, dgSpec);
+            }
+            else if (projectRestoreInfo2 != null && projectRestoreInfo2.ToolReferences != null)
+            {
+                VSNominationUtilities.ProcessToolReferences(projectNames, projectRestoreInfo2.TargetFrameworks, projectRestoreInfo2.ToolReferences, dgSpec);
             }
 
             return dgSpec;
@@ -185,12 +189,12 @@ namespace NuGet.SolutionRestoreManager
                                     projectDirectory,
                                     BaseIntermediatePath));
 
-            var projectName = VSNominationUtilities.GetPackageId(projectNames, projectRestoreInfo.TargetFrameworks);
+            var projectName = VSNominationUtilities.GetPackageId(projectNames, TargetFrameworks);
 
             var packageSpec = new PackageSpec(tfis)
             {
                 Name = projectName,
-                Version = VSNominationUtilities.GetPackageVersion(projectRestoreInfo.TargetFrameworks),
+                Version = VSNominationUtilities.GetPackageVersion(TargetFrameworks),
                 FilePath = projectFullPath,
                 RestoreMetadata = new ProjectRestoreMetadata
                 {
@@ -208,20 +212,20 @@ namespace NuGet.SolutionRestoreManager
 
                     // Read project properties for settings. ISettings values will be applied later since
                     // this value is put in the nomination cache and ISettings could change.
-                    PackagesPath = VSNominationUtilities.GetRestoreProjectPath(projectRestoreInfo.TargetFrameworks),
-                    FallbackFolders = VSNominationUtilities.GetRestoreFallbackFolders(projectRestoreInfo.TargetFrameworks).AsList(),
-                    Sources = VSNominationUtilities.GetRestoreSources(projectRestoreInfo.TargetFrameworks)
+                    PackagesPath = VSNominationUtilities.GetRestoreProjectPath(TargetFrameworks),
+                    FallbackFolders = VSNominationUtilities.GetRestoreFallbackFolders(TargetFrameworks).AsList(),
+                    Sources = VSNominationUtilities.GetRestoreSources(TargetFrameworks)
                                     .Select(e => new PackageSource(e))
                                     .ToList(),
-                    ProjectWideWarningProperties = VSNominationUtilities.GetProjectWideWarningProperties(projectRestoreInfo.TargetFrameworks),
+                    ProjectWideWarningProperties = VSNominationUtilities.GetProjectWideWarningProperties(TargetFrameworks),
                     CacheFilePath = NoOpRestoreUtilities.GetProjectCacheFilePath(cacheRoot: outputPath, projectPath: projectFullPath),
-                    RestoreLockProperties = VSNominationUtilities.GetRestoreLockProperties(projectRestoreInfo.TargetFrameworks)
+                    RestoreLockProperties = VSNominationUtilities.GetRestoreLockProperties(TargetFrameworks)
                 },
-                RuntimeGraph = VSNominationUtilities.GetRuntimeGraph(projectRestoreInfo),
+                RuntimeGraph = VSNominationUtilities.GetRuntimeGraph(TargetFrameworks),
                 RestoreSettings = new ProjectRestoreSettings() { HideWarningsAndErrors = true }
             };
 
             return packageSpec;
-        }        
+        }
     }
 }
