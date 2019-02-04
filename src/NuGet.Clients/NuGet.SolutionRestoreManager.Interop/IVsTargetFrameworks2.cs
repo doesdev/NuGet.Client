@@ -11,8 +11,8 @@ namespace NuGet.SolutionRestoreManager
     /// Represents a collection of target framework metadata items
     /// </summary>
     [ComImport]
-    [Guid("65f2e8c0-4e5d-4d50-945a-334987decc75")]
-    public interface IVsTargetFrameworks : IEnumerable
+    [Guid("0C9117CB-828D-4E16-B73F-FEEA9BD6A027")]
+    public interface IVsTargetFrameworks2 : IEnumerable
     {
         /// <summary>
         /// Total count of references in container.
@@ -24,6 +24,6 @@ namespace NuGet.SolutionRestoreManager
         /// </summary>
         /// <param name="index">Reference name or index.</param>
         /// <returns>Reference item matching index.</returns>
-        IVsTargetFrameworkInfo Item(object index);
+        IVsTargetFrameworkInfo2 Item(object index);
     }
 }
