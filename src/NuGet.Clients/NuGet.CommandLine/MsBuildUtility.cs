@@ -469,73 +469,57 @@ namespace NuGet.CommandLine
         public static MsBuildToolset GetMsBuildToolset(string userVersion, IConsole console)
         {
             var currentDirectoryCache = Directory.GetCurrentDirectory();
+            var msBuildDirectory = string.Empty;
             var installedToolsets = new List<MsBuildToolset>();
-            MsBuildToolset toolset = null;
 
-            try
-            {
-                // first try from $Path Env variable
-                var msbuildExe = GetMSBuild();
-
-                if (msbuildExe != null)
-                {
-                    var msBuildDirectory = Path.GetDirectoryName(msbuildExe);
-                    var msbuildVersion = FileVersionInfo.GetVersionInfo(msbuildExe)?.FileVersion;
-                    return toolset = new MsBuildToolset(msbuildVersion, msBuildDirectory);
-                }
-
-                // If Mono, test well known paths and bail if found
-                toolset = GetMsBuildFromMonoPaths(userVersion);
-                if (toolset != null)
-                {
-                    return toolset;
-                }
-
-                using (var projectCollection = LoadProjectCollection())
-                {
-                    var installed = ((dynamic)projectCollection)?.Toolsets;
-                    if (installed != null)
-                    {
-                        foreach (var item in installed)
-                        {
-                            installedToolsets.Add(new MsBuildToolset(version: item.ToolsVersion, path: item.ToolsPath));
-                        }
-
-                        installedToolsets = installedToolsets.ToList();
-                    }
-                }
-
-                // In a non-Mono environment, we have the potential for SxS installs of MSBuild 15.1+. Let's add these here.
-                if (!RuntimeEnvironmentHelper.IsMono)
-                {
-                    var installedSxsToolsets = GetInstalledSxsToolsets();
-                    if (installedToolsets == null)
-                    {
-                        installedToolsets = installedSxsToolsets;
-                    }
-                    else if (installedSxsToolsets != null)
-                    {
-                        installedToolsets.AddRange(installedSxsToolsets);
-                    }
-                }
-
-                if (!installedToolsets.Any())
-                {
-                    throw new CommandLineException(
-                        LocalizedResourceManager.GetString(
-                            nameof(NuGetResources.Error_CannotFindMsbuild)));
-                }
-
-                toolset = GetMsBuildDirectoryInternal(
-                    userVersion, console, installedToolsets.OrderByDescending(t => t), () => GetMsBuildPathInPathVar());
-
-                Directory.SetCurrentDirectory(currentDirectoryCache);
-                return toolset;
-            }
-            finally
+            // If Mono, test well known paths and bail if found
+            var toolset = GetMsBuildFromMonoPaths(userVersion);
+            if (toolset != null)
             {
                 LogToolsetToConsole(console, toolset);
+                return toolset;
             }
+
+            using (var projectCollection = LoadProjectCollection())
+            {
+                var installed = ((dynamic)projectCollection)?.Toolsets;
+                if (installed != null)
+                {
+                    foreach (var item in installed)
+                    {
+                        installedToolsets.Add(new MsBuildToolset(version: item.ToolsVersion, path: item.ToolsPath));
+                    }
+
+                    installedToolsets = installedToolsets.ToList();
+                }
+            }
+
+            // In a non-Mono environment, we have the potential for SxS installs of MSBuild 15.1+. Let's add these here.
+            if (!RuntimeEnvironmentHelper.IsMono)
+            {
+                var installedSxsToolsets = GetInstalledSxsToolsets();
+                if (installedToolsets == null)
+                {
+                    installedToolsets = installedSxsToolsets;
+                }
+                else if (installedSxsToolsets != null)
+                {
+                    installedToolsets.AddRange(installedSxsToolsets);
+                }
+            }
+
+            if (!installedToolsets.Any())
+            {
+                throw new CommandLineException(
+                    LocalizedResourceManager.GetString(
+                        nameof(NuGetResources.Error_CannotFindMsbuild)));
+            }
+
+            toolset = GetMsBuildDirectoryInternal(
+                userVersion, console, installedToolsets.OrderByDescending(t => t), () => GetMsBuildPathInPathVar());
+
+            Directory.SetCurrentDirectory(currentDirectoryCache);
+            return toolset;
         }
 
         /// <summary>
@@ -568,6 +552,12 @@ namespace NuGet.CommandLine
                 toolset = GetToolsetFromUserVersion(userVersion, toolsetsContainingMSBuild);
             }
 
+            if (toolset == null)
+            {
+                return null;
+            }
+
+            LogToolsetToConsole(console, toolset);
             return toolset;
         }
 
@@ -767,7 +757,7 @@ namespace NuGet.CommandLine
 
         private static void LogToolsetToConsole(IConsole console, MsBuildToolset toolset)
         {
-            if (console == null || toolset == null)
+            if (console == null)
             {
                 return;
             }
@@ -945,19 +935,27 @@ namespace NuGet.CommandLine
         {
             if (RuntimeEnvironmentHelper.IsMono)
             {
-                var msbuildExe = GetMSBuild();
+                // Try to find msbuild or xbuild in $Path.
+                var pathDirs = Environment.GetEnvironmentVariable("PATH")?.Split(new[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
 
-                if (msbuildExe != null)
+                if (pathDirs?.Length > 0)
                 {
-                    return msbuildExe;
+                    foreach (var exeName in new[] { "msbuild", "xbuild" })
+                    {
+                        var exePath = pathDirs.Select(dir => Path.Combine(dir, exeName)).FirstOrDefault(File.Exists);
+                        if (exePath != null)
+                        {
+                            return exePath;
+                        }
+                    }
                 }
 
                 // Find the first mono path that exists
-                msbuildExe = GetMsBuildFromMonoPaths(userVersion: null)?.Path;
+                var path = GetMsBuildFromMonoPaths(userVersion: null)?.Path;
 
-                if (msbuildExe != null)
+                if (path != null)
                 {
-                    return msbuildExe;
+                    return path;
                 }
                 else
                 {
@@ -968,33 +966,6 @@ namespace NuGet.CommandLine
             {
                 return Path.Combine(msbuildDirectory, "msbuild.exe");
             }
-        }
-
-        private static string GetMSBuild()
-        {
-            var exeNames = new [] { "msbuild.exe" };
-
-            if (RuntimeEnvironmentHelper.IsMono)
-            {
-                exeNames = new[] { "msbuild", "xbuild" };
-            }
-
-            // Try to find msbuild or xbuild in $Path.
-            var pathDirs = Environment.GetEnvironmentVariable("PATH")?.Split(new[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
-
-            if (pathDirs?.Length > 0)
-            {
-                foreach (var exeName in exeNames)
-                {
-                    var exePath = pathDirs.Select(dir => Path.Combine(dir, exeName)).FirstOrDefault(File.Exists);
-                    if (exePath != null)
-                    {
-                        return exePath;
-                    }
-                }
-            }
-
-            return null;
         }
 
         /// <summary>
