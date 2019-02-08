@@ -224,25 +224,10 @@ phases:
     inputs:
       TargetFolder: '$(Build.Repository.LocalPath)\\artifacts\\$(NupkgOutputDir)'
 
-  - task: CopyFiles@2
-    displayName: "Copy NuGet*.exe To a Temp file folder"
-    inputs:
-      SourceFolder: "$(Build.Repository.LocalPath)\\artifacts\\$(VsixPublishDir)"
-      Contents: "NuGet*.exe"
-      TargetFolder: "$(Build.Repository.LocalPath)\\artifacts\\tempVerifySign"
-
-  - task: ms-vseng.MicroBuildShipTasks.7c429315-71ba-4cb3-94bb-f829c95f7915.MicroBuildCodesignVerify@2
+  - task: ms-vseng.MicroBuildShipTasks.7c429315-71ba-4cb3-94bb-f829c95f7915.MicroBuildCodesignVerify@1
     displayName: 'Verify nuget.exe and mssign.exe Signatures and StrongName'
     inputs:
-      TargetFolders: 
-        $(Build.Repository.LocalPath)\\artifacts\\tempVerifySign
-
-  - task: PowerShell@1
-    displayName: "Remove temp folder"
-    inputs:
-      scriptType: "inlineScript"
-      inlineScript: |
-        Remove-Item -Path '$(Build.Repository.LocalPath)\\artifacts\\tempVerifySign' -Recurse 
+      TargetFolders: '$(Build.Repository.LocalPath)\\artifacts\\$(VsixPublishDir)'
 
   - task: CopyFiles@2
     displayName: "Copy Nupkgs"
