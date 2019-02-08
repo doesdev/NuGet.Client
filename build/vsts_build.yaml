@@ -227,8 +227,8 @@ phases:
   - task: PowerShell@1
     displayName: "test only : check curr folder to see contents"
     inputs:
-    scriptType: "inlineScript"
-    inlineScript: |
+      scriptType: "inlineScript"
+      inlineScript: |
       pwd
       cd '$(Build.Repository.LocalPath)\\artifacts\\$(VsixPublishDir)'
       pwd
