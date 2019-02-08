@@ -219,7 +219,7 @@ phases:
       command: "custom"
       arguments: "verify -Signatures $(Build.Repository.LocalPath)\\artifacts\\$(NupkgOutputDir)\\*.nupkg"
 
-  - task: ms-vseng.MicroBuildShipTasks.7c429315-71ba-4cb3-94bb-f829c95f7915.MicroBuildCodesignVerify@2
+  - task: ms-vseng.MicroBuildShipTasks.7c429315-71ba-4cb3-94bb-f829c95f7915.MicroBuildCodesignVerify@1
     displayName: Verify Assembly Signatures and StrongName
     inputs:
       TargetFolder: '$(Build.Repository.LocalPath)\\artifacts\\$(NupkgOutputDir)'
@@ -234,7 +234,7 @@ phases:
         pwd
         ls
 
-  - task: ms-vseng.MicroBuildShipTasks.7c429315-71ba-4cb3-94bb-f829c95f7915.MicroBuildCodesignVerify@1
+  - task: ms-vseng.MicroBuildShipTasks.7c429315-71ba-4cb3-94bb-f829c95f7915.MicroBuildCodesignVerify@2
     displayName: 'Verify nuget.exe and mssign.exe Signatures and StrongName'
     inputs:
       TargetFolders: '$(Build.Repository.LocalPath)\\artifacts\\$(VsixPublishDir)'
